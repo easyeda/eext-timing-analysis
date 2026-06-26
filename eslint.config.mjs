@@ -9,5 +9,9 @@ export default antfu({
 
 	typescript: true,
 
+	rules: {
+		'no-template-curly-in-string': 'off',
+	},
+
 	ignores: ['build/dist/', 'coverage/', 'dist/', 'node_modules/', '.eslintcache', 'debug.log'],
 });

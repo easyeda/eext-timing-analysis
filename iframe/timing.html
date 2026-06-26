@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hans">
 <head>
-    <title>时序图分析</title>
+    <title>Timing Analysis</title>
     <meta charset="utf-8" />
     <style>
         :root {
@@ -380,45 +380,48 @@
 <body>
     <div class="left-panel">
         <div class="header-row">
-            <div class="info" id="compInfo">正在加载数据...</div>
-            <div class="theme-toggle" id="themeToggle" title="切换主题">
-                <span class="theme-icon">☀</span>
+            <div class="info" id="compInfo" data-i18n="loadingData">正在加载数据...</div>
+            <div style="display:flex;gap:4px;align-items:center;">
+                <div class="theme-toggle" id="themeToggle" title="切换主题" data-i18n-title="toggleTheme">
+                    <span class="theme-icon">☀</span>
+                </div>
+                <!-- Language auto-switches via platform eda.sys_I18n API -->
             </div>
         </div>
         
-        <h3>选择网络（可多选）</h3>
+        <h3 data-i18n="selectNets">选择网络（可多选）</h3>
         <div class="net-list" id="netList">
-            <div style="color:#888;font-size:12px;padding:8px;">加载中...</div>
+            <div style="color:#888;font-size:12px;padding:8px;" data-i18n="loading">加载中...</div>
         </div>
         
         <div class="param-row">
             <div class="form-group">
-                <label>时钟频率 (MHz)</label>
+                <label data-i18n="clockFreq">时钟频率 (MHz)</label>
                 <input type="number" id="freqInput" value="100" min="1" max="1000" step="1">
             </div>
             <div class="form-group">
-                <label>板厚 (mm)</label>
+                <label data-i18n="boardThickness">板厚 (mm)</label>
                 <input type="text" id="boardThicknessInput" value="1.6000  63.0mil" class="input-thickness">
             </div>
         </div>
         
         <div class="param-row">
             <div class="form-group">
-                <label>建立时间 Tsu (ns)</label>
+                <label data-i18n="setupTime">建立时间 Tsu (ns)</label>
                 <input type="number" id="setupInput" value="5" min="0" step="0.1">
             </div>
             <div class="form-group">
-                <label>保持时间 Th (ns)</label>
+                <label data-i18n="holdTime">保持时间 Th (ns)</label>
                 <input type="number" id="holdInput" value="2" min="0" step="0.1">
             </div>
         </div>
         
         <div class="btn-group">
-            <button class="btn btn-primary" id="calcBtn">计算</button>
+            <button class="btn btn-primary" id="calcBtn" data-i18n="calculate">计算</button>
         </div>
         <div class="btn-group" style="margin-top:8px;">
             <div class="export-group">
-                <button class="btn btn-export" id="exportBtn" onclick="exportWithFormat()">导出 SVG</button>
+                <button class="btn btn-export" id="exportBtn" onclick="exportWithFormat()" data-i18n="exportSvg">导出 SVG</button>
                 <div class="export-dropdown">
                     <select id="exportFormat" onchange="updateExportBtnText(this.value)">
                         <option value="svg">SVG</option>
@@ -428,14 +431,14 @@
                     <span class="dropdown-arrow">▼</span>
                 </div>
             </div>
-            <button class="btn btn-cancel" onclick="closeForm()">关闭</button>
+            <button class="btn btn-cancel" onclick="closeForm()" data-i18n="close">关闭</button>
         </div>
     </div>
     
     <div class="right-panel">
         <div class="result-info" id="resultText">
-            <span id="resultContent">选择网络并设置参数后，点击计算查看结果</span>
-            <button class="copy-btn" onclick="copyResult()">复制</button>
+            <span id="resultContent" data-i18n="resultHint">选择网络并设置参数后，点击计算查看结果</span>
+            <button class="copy-btn" onclick="copyResult()" data-i18n="copy">复制</button>
         </div>
         <div class="svg-container" id="svgContainer">
             <div class="svg-wrapper" id="svgWrapper">
@@ -459,10 +462,79 @@
     </div>
     
     <script>
-        function log(msg) { 
+        // ===== i18n =====
+        var I18N = {
+            zh: {
+                loadingData:'正在加载数据...', toggleTheme:'切换主题',
+                selectNets:'选择网络（可多选）', loading:'加载中...',
+                clockFreq:'时钟频率 (MHz)', boardThickness:'板厚 (mm)',
+                setupTime:'建立时间 Tsu (ns)', holdTime:'保持时间 Th (ns)',
+                calculate:'计算', exportSvg:'导出 SVG', close:'关闭',
+                resultHint:'选择网络并设置参数后，点击计算查看结果', copy:'复制',
+                selectAll:'全选', searchNets:'搜索网络...',
+                copied:'结果已复制到剪贴板', copyFailed:'复制失败',
+                noExportData:'没有可导出的数据', exportFailed:'导出失败: ',
+                imgLoadFailed:'图片加载失败',
+                clock:'时钟', period:'周期', manhattan:'曼哈顿', viaComp:'过孔补偿',
+                actualLen:'实际长度', margin:'余量',
+                pass:'✓ PASS', fail:'✗ FAIL',
+                signals:'路信号'
+            },
+            en: {
+                loadingData:'Loading data...', toggleTheme:'Toggle Theme',
+                selectNets:'Select Nets (multi-select)', loading:'Loading...',
+                clockFreq:'Clock Frequency (MHz)', boardThickness:'Board Thickness (mm)',
+                setupTime:'Setup Time Tsu (ns)', holdTime:'Hold Time Th (ns)',
+                calculate:'Calculate', exportSvg:'Export SVG', close:'Close',
+                resultHint:'Select nets and set parameters, then click Calculate to view results', copy:'Copy',
+                selectAll:'Select All', searchNets:'Search nets...',
+                copied:'Result copied to clipboard', copyFailed:'Copy failed',
+                noExportData:'No data to export', exportFailed:'Export failed: ',
+                imgLoadFailed:'Image load failed',
+                clock:'Clock', period:'Period', manhattan:'Manhattan', viaComp:'Via Comp',
+                actualLen:'Actual Len', margin:'Margin',
+                pass:'✓ PASS', fail:'✗ FAIL',
+                signals:'signals'
+            }
+        };
+
+        var currentLang = 'zh';
+        var t = function(key) { return I18N[currentLang][key] || I18N['en'][key] || key; };
+
+        // Use platform API for automatic language detection
+        try {
+            eda.sys_I18n.getCurrentLanguage().then(function(lang) {
+                currentLang = (lang && lang.startsWith('en')) ? 'en' : 'zh';
+                applyI18n();
+            });
+        } catch(e) {}
+        try {
+            eda.sys_I18n.addLanguageChangedEventListener('timing-iframe-i18n', function(newLang) {
+                currentLang = (newLang && newLang.startsWith('en')) ? 'en' : 'zh';
+                applyI18n();
+            }, false);
+        } catch(e) {}
+
+        function applyI18n() {
+            document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                var key = el.getAttribute('data-i18n');
+                if (I18N[currentLang][key]) el.textContent = I18N[currentLang][key];
+            });
+            document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
+                var key = el.getAttribute('data-i18n-title');
+                if (I18N[currentLang][key]) el.title = I18N[currentLang][key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+                var key = el.getAttribute('data-i18n-placeholder');
+                if (I18N[currentLang][key]) el.placeholder = I18N[currentLang][key];
+            });
+            if (computedData) updateDisplay();
+        }
+
+        function log(msg) {
             console.log('[Timing]', msg);
         }
-        
+
         var componentData = null;
         var selectedNets = [];
         var autoUpdate = false;
@@ -690,7 +762,7 @@
         function initForm(data) {
             if (!data) return;
             componentData = data;
-            log('表单初始化成功');
+            log('Form initialized');
             document.getElementById('compInfo').textContent = data.info;
             
             var netList = document.getElementById('netList');
@@ -698,12 +770,12 @@
             
             var selectAllRow = document.createElement('div');
             selectAllRow.className = 'select-all-row';
-            selectAllRow.innerHTML = '<input type="checkbox" id="selectAll"> <span>全选</span>';
+            selectAllRow.innerHTML = '<input type="checkbox" id="selectAll"> <span>' + t('selectAll') + '</span>';
             netList.appendChild(selectAllRow);
             
             var searchBox = document.createElement('div');
             searchBox.className = 'search-box';
-            searchBox.innerHTML = '<input type="text" id="netSearch" placeholder="搜索网络...">';
+            searchBox.innerHTML = '<input type="text" id="netSearch" placeholder="' + t('searchNets') + '">';
             selectAllRow.appendChild(searchBox);
             
             var selectAllCheckbox = document.getElementById('selectAll');
@@ -749,7 +821,7 @@
                     selectedNets = selectedNets.filter(function(idx) { return !searchableIndices.has(idx); });
                     highlightedNets = highlightedNets.filter(function(net) { return !searchableNets.has(net); });
                 }
-                log('全选: ' + this.checked + ', 选中: ' + selectedNets.length);
+                log('Select all: ' + this.checked + ', selected: ' + selectedNets.length);
                 computeTimingData();
             });
             
@@ -829,7 +901,7 @@
                             var allChecked = Array.from(netItems).every(function(cb) { return cb.checked; });
                             if (!allChecked) selectAllBox.checked = false;
                         }
-                        log('选中网络: ' + selectedNets.length + ' [' + selectedNets.join(',') + ']');
+                        log('Selected nets: ' + selectedNets.length + ' [' + selectedNets.join(',') + ']');
                         computeTimingData();
                     };
                 })(i, itemDiv));
@@ -894,7 +966,7 @@
             var hold = parseFloat(document.getElementById('holdInput').value);
             
             if (isNaN(freq) || freq <= 0) {
-                log('频率无效');
+                log('Invalid frequency');
                 return null;
             }
             
@@ -929,7 +1001,7 @@
             }).filter(function(s) { return s !== null; });
             
             if (signals.length === 0) {
-                log('无有效信号');
+                log('No valid signals');
                 return null;
             }
             
@@ -945,7 +1017,7 @@
         
         function updateDisplay() {
             if (!computedData) {
-                document.getElementById('resultContent').textContent = '请选择至少一个网络';
+                document.getElementById('resultContent').textContent = t('resultHint');
                 document.getElementById('svgContent').innerHTML = '';
                 document.getElementById('netLabels').innerHTML = '';
                 return;
@@ -958,15 +1030,15 @@
             var dist = computedData.dist;
             var signals = computedData.signals;
             
-            var resultTxt = '时钟: ' + freq.toFixed(1) + ' MHz | 周期: ' + period.toFixed(2) + ' ns\n';
+            var resultTxt = t('clock') + ': ' + freq.toFixed(1) + ' MHz | ' + t('period') + ': ' + period.toFixed(2) + ' ns\n';
             resultTxt += 'Tsu: ' + setup.toFixed(2) + ' ns | Th: ' + hold.toFixed(2) + ' ns\n';
             resultTxt += '--------------------------------------------\n';
-            
+
             signals.forEach(function(sig, i) {
                 var manhattanStr = sig.dist.toFixed(0) + 'mil';
-                var viaCompStr = (sig.viaCount > 0) ? (' | 过孔补偿+' + Math.round(sig.viaCompensation) + 'mil(' + sig.viaCount + '个)') : ' | 过孔补偿+0mil';
+                var viaCompStr = (sig.viaCount > 0) ? (' | ' + t('viaComp') + '+' + Math.round(sig.viaCompensation) + 'mil(' + sig.viaCount + ')') : ' | ' + t('viaComp') + '+0mil';
                 var totalLenStr = sig.totalLen.toFixed(0) + 'mil';
-                resultTxt += '[' + (i+1) + '] ' + sig.net + ': 曼哈顿=' + manhattanStr + viaCompStr + ' | 实际长度=' + totalLenStr + ' | Tpd=' + sig.pd.toFixed(2) + 'ns | 余量=' + sig.margin.toFixed(2) + 'ns ' + (sig.margin > 0 ? '✓ PASS' : '✗ FAIL') + '\n';
+                resultTxt += '[' + (i+1) + '] ' + sig.net + ': ' + t('manhattan') + '=' + manhattanStr + viaCompStr + ' | ' + t('actualLen') + '=' + totalLenStr + ' | Tpd=' + sig.pd.toFixed(2) + 'ns | ' + t('margin') + '=' + sig.margin.toFixed(2) + 'ns ' + (sig.margin > 0 ? t('pass') : t('fail')) + '\n';
             });
             
             document.getElementById('resultContent').textContent = resultTxt;
@@ -982,7 +1054,7 @@
             
             document.getElementById('svgContent').innerHTML = svg;
             resetZoom();
-            log('更新完成, ' + signals.length + '路信号');
+            log('Updated, ' + signals.length + ' signals');
         }
         
         function renderNetLabels(signals) {
@@ -1171,16 +1243,16 @@
         function copyResult() {
             var text = document.getElementById('resultContent').textContent;
             navigator.clipboard.writeText(text).then(function() {
-                log('结果已复制到剪贴板');
+                log('Result copied to clipboard');
                 try {
-                    eda.sys_Message.showToastMessage('结果已复制到剪贴板');
+                    eda.sys_Message.showToastMessage(t('copied'));
                 } catch (e) {
                     console.warn('[Timing] Toast error:', e);
                 }
             }).catch(function() {
-                log('复制失败');
+                log(t('copyFailed'));
                 try {
-                    eda.sys_Message.showToastMessage('复制失败');
+                    eda.sys_Message.showToastMessage(t('copyFailed'));
                 } catch (e) {}
             });
         }
@@ -1203,7 +1275,7 @@
         function updateExportBtnText(format) {
             var btn = document.getElementById('exportBtn');
             if (btn) {
-                btn.textContent = '导出 ' + format.toUpperCase();
+                btn.textContent = t('exportSvg').replace('SVG', format.toUpperCase());
             }
         }
         
@@ -1213,7 +1285,7 @@
         
         function exportSVGWithFormat(format) {
             if (!computedData) {
-                alert('没有可导出的数据');
+                alert(t('noExportData'));
                 return;
             }
             var format = document.getElementById('exportFormat').value;
@@ -1228,11 +1300,11 @@
                 var blob = new Blob([svg], { type: 'image/svg+xml' });
                 var fileName = 'timing_' + Date.now() + '.svg';
                 eda.sys_FileSystem.saveFile(blob, fileName).then(function() {
-                    log('SVG导出成功: ' + fileName);
-                    eda.sys_Message.showToastMessage('已导出: ' + fileName);
+                    log('SVG exported: ' + fileName);
+                    eda.sys_Message.showToastMessage(fileName);
                 }).catch(function(err) {
-                    log('SVG导出失败: ' + err);
-                    alert('导出失败: ' + err);
+                    log('SVG export failed: ' + err);
+                    alert(t('exportFailed') + err);
                 });
                 return;
             }
@@ -1265,17 +1337,17 @@
                 var blob = new Blob([array], { type: mimeType });
                 var fileName = 'timing_' + Date.now() + '.' + format;
                 eda.sys_FileSystem.saveFile(blob, fileName).then(function() {
-                    log(format.toUpperCase() + '导出成功: ' + fileName);
-                    eda.sys_Message.showToastMessage('已导出: ' + fileName);
+                    log(format.toUpperCase() + ' exported: ' + fileName);
+                    eda.sys_Message.showToastMessage(fileName);
                 }).catch(function(err) {
-                    log(format.toUpperCase() + '导出失败: ' + err);
-                    alert('导出失败: ' + err);
+                    log(format.toUpperCase() + ' export failed: ' + err);
+                    alert(t('exportFailed') + err);
                 });
             };
             
             img.onerror = function() {
                 URL.revokeObjectURL(url);
-                alert('图片加载失败');
+                alert(t('imgLoadFailed'));
             };
             
             img.src = url;
@@ -1324,7 +1396,8 @@
             highlightedNets = [];
         };
         
-        log('页面加载');
+        log('Page loaded');
+        applyI18n();
         initTheme();
         
         var themeToggle = document.getElementById('themeToggle');
@@ -1335,14 +1408,14 @@
         updateBoardThickness('1.6000');
         
         eda.sys_MessageBus.subscribePublic('timingFormData', function(data) {
-            log('收到推送数据');
+            log('Received push data');
             if (data && data.info) initForm(data);
         });
         eda.sys_MessageBus.publishPublic('requestTimingFormData', null);
         
         setTimeout(function() { 
             if (!componentData) { 
-                log('超时，再次请求'); 
+                log('Timeout, retrying request'); 
                 eda.sys_MessageBus.publishPublic('requestTimingFormData', null);
             } 
         }, 3000);

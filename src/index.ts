@@ -99,7 +99,7 @@ export function activate(_status?: 'onStartupFinished', _arg?: string): void {
 			if (g_formData && g_formData.info && g_formData.nets && g_formData.nets.length > 0) {
 				return JSON.parse(JSON.stringify(g_formData));
 			}
-			return { info: '数据未准备好', nets: [] };
+			return { info: 'Data not ready', nets: [] };
 		});
 	}, 1000);
 
@@ -108,7 +108,7 @@ export function activate(_status?: 'onStartupFinished', _arg?: string): void {
 			eda.sys_MessageBus.publishPublic('timingFormData', JSON.parse(JSON.stringify(g_formData)));
 		}
 		else {
-			eda.sys_MessageBus.publishPublic('timingFormData', { info: '数据未准备好', nets: [] });
+			eda.sys_MessageBus.publishPublic('timingFormData', { info: 'Data not ready', nets: [] });
 		}
 	});
 
@@ -183,8 +183,8 @@ export function activate(_status?: 'onStartupFinished', _arg?: string): void {
 
 export function about(): void {
 	eda.sys_Dialog.showInformationMessage(
-		`时序图分析扩展 v${extensionConfig.version}`,
-		'关于',
+		eda.sys_I18n.text('时序图分析扩展 v${1}', undefined, undefined, extensionConfig.version),
+		eda.sys_I18n.text('关于'),
 	);
 }
 
@@ -195,7 +195,7 @@ export function changeTheme(): void {
 	catch {}
 
 	eda.sys_IFrame.openIFrame('/iframe/theme.html', 400, 250, 'themeSelector', {
-		title: '选择界面主题',
+		title: eda.sys_I18n.text('选择界面主题'),
 		hideHeader: false,
 		maximizeButton: false,
 		minimizeButton: false,
@@ -206,13 +206,13 @@ export async function testCapture(): Promise<void> {
 	try {
 		const docInfo = await eda.dmt_SelectControl.getCurrentDocumentInfo();
 		if (!docInfo || docInfo.documentType !== 3) {
-			eda.sys_Dialog.showInformationMessage('请先打开一个PCB文档', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请先打开一个PCB文档'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
 		const selectedPrimitives = await eda.pcb_SelectControl.getAllSelectedPrimitives();
 		if (!selectedPrimitives || selectedPrimitives.length < 2) {
-			eda.sys_Dialog.showInformationMessage('请先选择两个器件', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请先选择两个器件'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -227,7 +227,7 @@ export async function testCapture(): Promise<void> {
 		const selectedCompIds = selectedIds.filter((id: string) => compIds.includes(id));
 
 		if (selectedCompIds.length < 2) {
-			eda.sys_Dialog.showInformationMessage('请选择两个器件', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请选择两个器件'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -235,11 +235,11 @@ export async function testCapture(): Promise<void> {
 		const comp2 = allComps.find((c: any) => c.getState_PrimitiveId?.() === selectedCompIds[1]);
 
 		if (!comp1 || !comp2) {
-			eda.sys_Dialog.showInformationMessage('无法获取器件信息', '错误');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('无法获取器件信息'), eda.sys_I18n.text('错误'));
 			return;
 		}
 
-		let info = '=== 器件1 ===\n';
+		let info = '=== Component 1 ===\n';
 		info += `Designator: ${comp1.getState_Designator?.() || 'N/A'}\n`;
 		info += `Name: ${comp1.getState_Name?.() || 'N/A'}\n`;
 
@@ -264,7 +264,7 @@ export async function testCapture(): Promise<void> {
 		}
 		catch {}
 
-		info += '\n=== 器件2 ===\n';
+		info += '\n=== Component 2 ===\n';
 		info += `Designator: ${comp2.getState_Designator?.() || 'N/A'}\n`;
 		info += `Name: ${comp2.getState_Name?.() || 'N/A'}\n`;
 
@@ -316,10 +316,10 @@ export async function testCapture(): Promise<void> {
 		info += `Thumb: ${comp2.getState_Thumb?.() || 'N/A'}\n`;
 		info += `Pins: ${JSON.stringify(comp2.getState_Pins?.() || [])}\n`;
 
-		eda.sys_Dialog.showInformationMessage(info, '捕获的器件信息');
+		eda.sys_Dialog.showInformationMessage(info, 'Captured Component Info');
 	}
 	catch (error: any) {
-		eda.sys_Dialog.showInformationMessage(`错误: ${error}`, '错误');
+		eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('错误: ${1}', undefined, undefined, error), eda.sys_I18n.text('错误'));
 	}
 }
 
@@ -327,13 +327,13 @@ export async function highlightNets(): Promise<void> {
 	try {
 		const docInfo = await eda.dmt_SelectControl.getCurrentDocumentInfo();
 		if (!docInfo || docInfo.documentType !== 3) {
-			eda.sys_Dialog.showInformationMessage('请先打开一个PCB文档', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请先打开一个PCB文档'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
 		const selectedPrimitives = await eda.pcb_SelectControl.getAllSelectedPrimitives();
 		if (!selectedPrimitives || selectedPrimitives.length < 2) {
-			eda.sys_Dialog.showInformationMessage('请先选择两个器件', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请先选择两个器件'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -348,7 +348,7 @@ export async function highlightNets(): Promise<void> {
 		const selectedCompIds = selectedIds.filter((id: string) => compIds.includes(id));
 
 		if (selectedCompIds.length < 2) {
-			eda.sys_Dialog.showInformationMessage('请选择两个器件', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请选择两个器件'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -356,7 +356,7 @@ export async function highlightNets(): Promise<void> {
 		const comp2 = allComps.find((c: any) => c.getState_PrimitiveId?.() === selectedCompIds[1]);
 
 		if (!comp1 || !comp2) {
-			eda.sys_Dialog.showInformationMessage('无法获取器件信息', '错误');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('无法获取器件信息'), eda.sys_I18n.text('错误'));
 			return;
 		}
 
@@ -368,7 +368,7 @@ export async function highlightNets(): Promise<void> {
 		const commonNets = Array.from(nets1).filter((net: any) => nets2.has(net));
 
 		if (commonNets.length === 0) {
-			eda.sys_Dialog.showInformationMessage('两个器件之间没有共有的网络', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('两个器件之间没有共有的网络'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -379,7 +379,7 @@ export async function highlightNets(): Promise<void> {
 		});
 
 		if (signalNets.length === 0) {
-			eda.sys_Dialog.showInformationMessage('两个器件之间没有信号网络（仅有电源网络）', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('两个器件之间没有信号网络（仅有电源网络）'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -390,15 +390,15 @@ export async function highlightNets(): Promise<void> {
 			catch {}
 		}
 
-		eda.sys_Message.showToastMessage(`已高亮 ${signalNets.length} 个信号网络`);
+		eda.sys_Message.showToastMessage(eda.sys_I18n.text('已高亮 ${1} 个信号网络', undefined, undefined, signalNets.length));
 	}
 	catch (error: any) {
-		eda.sys_Dialog.showInformationMessage(`错误: ${error}`, '错误');
+		eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('错误: ${1}', undefined, undefined, error), eda.sys_I18n.text('错误'));
 	}
 }
 
 export function test(): void {
-	eda.sys_Dialog.showInformationMessage('扩展已正常加载！', '测试');
+	eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('扩展已正常加载！'), eda.sys_I18n.text('测试'));
 }
 
 function stopPolling(): void {
@@ -410,12 +410,12 @@ function stopPolling(): void {
 }
 
 export async function analyzeTiming(): Promise<void> {
-	eda.sys_Message.showToastMessage('请选择第一个器件');
+	eda.sys_Message.showToastMessage(eda.sys_I18n.text('请选择第一个器件'));
 
 	try {
 		const docInfo = await eda.dmt_SelectControl.getCurrentDocumentInfo();
 		if (!docInfo || docInfo.documentType !== 3) {
-			eda.sys_Dialog.showInformationMessage('请先打开一个PCB文档', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请先打开一个PCB文档'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -434,7 +434,7 @@ export async function analyzeTiming(): Promise<void> {
 
 				if (!selectedPrimitives || !Array.isArray(selectedPrimitives) || selectedPrimitives.length === 0) {
 					if (selectedComponents.length > 0) {
-						eda.sys_Message.showToastMessage('选择已清除，请重新选择第一个器件');
+						eda.sys_Message.showToastMessage(eda.sys_I18n.text('选择已清除，请重新选择第一个器件'));
 						selectedComponents = [];
 					}
 					return;
@@ -463,7 +463,7 @@ export async function analyzeTiming(): Promise<void> {
 						const des1 = comp1.getState_Designator?.() || 'U1';
 						const des2 = comp2.getState_Designator?.() || 'U2';
 
-						eda.sys_Message.showToastMessage(`选中: ${des1}, ${des2}`);
+						eda.sys_Message.showToastMessage(eda.sys_I18n.text('选中: ${1}, ${2}', undefined, undefined, des1, des2));
 						stopPolling();
 
 						await prepareFormData([comp1, comp2]);
@@ -479,7 +479,7 @@ export async function analyzeTiming(): Promise<void> {
 
 						if (selectedComponents.length === 0) {
 							selectedComponents[0] = comp;
-							eda.sys_Message.showToastMessage(`已选: ${des}，请再选第二个器件`);
+							eda.sys_Message.showToastMessage(eda.sys_I18n.text('已选: ${1}，请再选第二个器件', undefined, undefined, des));
 						}
 						else if (selectedComponents.length >= 1) {
 							const firstId = selectedComponents[0]?.getState_PrimitiveId?.();
@@ -490,7 +490,7 @@ export async function analyzeTiming(): Promise<void> {
 								const des1 = selectedComponents[0]?.getState_Designator?.() || 'U1';
 								const des2 = des;
 
-								eda.sys_Message.showToastMessage(`选中: ${des1}, ${des2}`);
+								eda.sys_Message.showToastMessage(eda.sys_I18n.text('选中: ${1}, ${2}', undefined, undefined, des1, des2));
 								stopPolling();
 
 								await prepareFormData(selectedComponents);
@@ -500,13 +500,13 @@ export async function analyzeTiming(): Promise<void> {
 				}
 			}
 			catch (error: any) {
-				eda.sys_Dialog.showInformationMessage(`错误: ${error}`, '错误');
+				eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('错误: ${1}', undefined, undefined, error), eda.sys_I18n.text('错误'));
 			}
 		}, 300);
 	}
 	catch (error: any) {
 		stopPolling();
-		eda.sys_Dialog.showInformationMessage(`分析出错: ${error}`, '错误');
+		eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('分析出错: ${1}', undefined, undefined, error), eda.sys_I18n.text('错误'));
 	}
 }
 
@@ -521,7 +521,7 @@ async function prepareFormData(components: any[]): Promise<void> {
 		const c2 = components[1];
 
 		if (!c1 || !c2) {
-			eda.sys_Dialog.showInformationMessage('未选择2个器件', '错误');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('未选择2个器件'), eda.sys_I18n.text('错误'));
 			isAnalyzing = false;
 			return;
 		}
@@ -553,7 +553,7 @@ async function prepareFormData(components: any[]): Promise<void> {
 		const commonNets = Array.from(nets1).filter((net: any) => nets2.has(net));
 
 		if (commonNets.length === 0) {
-			eda.sys_Dialog.showInformationMessage('两个器件之间没有共有的网络连接', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('两个器件之间没有共有的网络连接'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -580,7 +580,7 @@ async function prepareFormData(components: any[]): Promise<void> {
 		}
 
 		g_formData = {
-			info: `起点: ${des1} (${devName1})\n终点: ${des2} (${devName2})\n共有 ${commonNets.length} 个网络`,
+			info: `Source: ${des1} (${devName1})\nTarget: ${des2} (${devName2})\n${commonNets.length} common nets`,
 			nets: netOptions,
 			des1,
 			des2,
@@ -613,7 +613,7 @@ async function prepareFormData(components: any[]): Promise<void> {
 		await new Promise(resolve => setTimeout(resolve, 300));
 
 		eda.sys_IFrame.openIFrame('/iframe/timing.html', 950, 600, 'timingForm', {
-			title: '时序图分析',
+			title: eda.sys_I18n.text('时序图分析'),
 			maximizeButton: false,
 			minimizeButton: true,
 			async buttonCallbackFn(button) {
@@ -630,7 +630,7 @@ async function prepareFormData(components: any[]): Promise<void> {
 			},
 		});
 
-		eda.sys_Message.showToastMessage('正在打开时序分析...');
+		eda.sys_Message.showToastMessage(eda.sys_I18n.text('正在打开时序分析...'));
 		setTimeout(() => {
 			if (g_formData && g_formData.info) {
 				eda.sys_MessageBus.publishPublic('timingFormData', JSON.parse(JSON.stringify(g_formData)));
@@ -643,7 +643,7 @@ async function prepareFormData(components: any[]): Promise<void> {
 		}, 3000);
 	}
 	catch (error) {
-		eda.sys_Dialog.showInformationMessage(`准备数据出错:\n${error}`, '错误');
+		eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('准备数据出错:\n${1}', undefined, undefined, error), eda.sys_I18n.text('错误'));
 	}
 	finally {
 		isAnalyzing = false;
@@ -654,13 +654,13 @@ export async function quickAnalysis(): Promise<void> {
 	try {
 		const docInfo = await eda.dmt_SelectControl.getCurrentDocumentInfo();
 		if (!docInfo || docInfo.documentType !== 3) {
-			eda.sys_Dialog.showInformationMessage('请先打开一个PCB文档', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('请先打开一个PCB文档'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
 		const allComponents = await eda.pcb_PrimitiveComponent.getAll();
 		if (allComponents.length < 2) {
-			eda.sys_Dialog.showInformationMessage('PCB上需要至少两个器件', '提示');
+			eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('PCB上需要至少两个器件'), eda.sys_I18n.text('提示'));
 			return;
 		}
 
@@ -700,14 +700,14 @@ export async function quickAnalysis(): Promise<void> {
 		}
 	}
 	catch (error) {
-		eda.sys_Dialog.showInformationMessage(`快速分析出错:\n${error}`, '错误');
+		eda.sys_Dialog.showInformationMessage(eda.sys_I18n.text('快速分析出错:\n${1}', undefined, undefined, error), eda.sys_I18n.text('错误'));
 	}
 }
 
 export function cancelSelection(): void {
 	stopPolling();
 	selectedComponents = [];
-	eda.sys_Message.showToastMessage('已取消选择');
+	eda.sys_Message.showToastMessage(eda.sys_I18n.text('已取消选择'));
 }
 
 function _generateTimingSVG(
@@ -832,7 +832,7 @@ function _generateTimingSVG(
 	svg += `<line x1="${inChange1X}" y1="${dataInY - 25}" x2="${inChange2X}" y2="${dataInY - 25}" stroke="#00aaff" stroke-width="2"/>`;
 
 	svg += `<circle cx="${captureX}" cy="${dataInY - 25}" r="5" fill="#ff6666" stroke="#fff" stroke-width="1"/>`;
-	svg += `<text x="${captureX + 8}" y="${dataInY - 20}" fill="#ff6666" font-family="Consolas, monospace" font-size="9">采样点</text>`;
+	svg += `<text x="${captureX + 8}" y="${dataInY - 20}" fill="#ff6666" font-family="Consolas, monospace" font-size="9">Sample</text>`;
 
 	svg += `<line x1="${inChange2X}" y1="${dataInY - 25}" x2="${inChange2X}" y2="${dataInY}" stroke="#00aaff" stroke-width="2"/>`;
 	svg += `<line x1="${inChange2X}" y1="${dataInY}" x2="${leftMargin + timeAxisWidth}" y2="${dataInY}" stroke="#00aaff" stroke-width="2"/>`;

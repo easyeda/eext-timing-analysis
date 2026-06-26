@@ -1,3 +1,9 @@
 {
-	"About...": "About..."
+	"About...": "About...",
+	"时序图分析工具": "Timing Analysis Tool",
+	"PCB时序图分析工具，支持路径延迟计算、Setup/Hold时间分析、时序图可视化显示和Timing Budget输出。自动分析两个器件间的信号网络，实时计算时序余量，支持导出SVG/PNG/JPG格式时序图。": "A PCB timing analysis tool supporting path delay calculation, Setup/Hold time analysis, timing diagram visualization, and Timing Budget output. Automatically analyzes signal nets between two components, calculates timing margins in real-time, and supports exporting timing diagrams in SVG/PNG/JPG formats.",
+	"时序分析": "Timing Analysis",
+	"选择器件分析": "Select Components to Analyze",
+	"取消选择": "Cancel Selection",
+	"关于...": "About..."
 }

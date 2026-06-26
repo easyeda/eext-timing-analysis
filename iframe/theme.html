@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hans">
 <head>
-    <title>界面主题</title>
+    <title>UI Theme</title>
     <meta charset="utf-8" />
     <style>
         :root {
@@ -99,27 +99,27 @@
     </style>
 </head>
 <body>
-    <h3>选择界面主题</h3>
+    <h3>Select UI Theme</h3>
     <div class="theme-options">
         <label class="theme-option" id="option-dark">
             <input type="radio" name="theme" value="dark">
             <span class="radio"></span>
-            <span class="label">深色</span>
-            <span class="desc">（默认）</span>
+            <span class="label">Dark</span>
+            <span class="desc">(Default)</span>
         </label>
         <label class="theme-option" id="option-light">
             <input type="radio" name="theme" value="light">
             <span class="radio"></span>
-            <span class="label">浅色</span>
+            <span class="label">Light</span>
         </label>
         <label class="theme-option" id="option-system">
             <input type="radio" name="theme" value="system">
             <span class="radio"></span>
-            <span class="label">跟随系统</span>
-            <span class="desc">自动匹配系统主题</span>
+            <span class="label">Follow System</span>
+            <span class="desc">Auto-match system theme</span>
         </label>
     </div>
-    <div class="hint">主题设置将在下次打开时序分析窗口时生效</div>
+    <div class="hint">Theme settings take effect next time the timing analysis window opens</div>
     
     <script>
         var currentTheme = 'dark';
@@ -178,7 +178,7 @@
                 }
                 
                 eda.sys_Storage.setExtensionUserConfig('theme', theme).then(function() {
-                    eda.sys_Message.showToastMessage('主题已设置为: ' + (theme === 'dark' ? '深色' : theme === 'light' ? '浅色' : '跟随系统'));
+                    eda.sys_Message.showToastMessage('Theme set to: ' + (theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Follow System'));
                 });
             });
         });

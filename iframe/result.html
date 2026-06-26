@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hans">
 <head>
-    <title>时序图分析结果</title>
+    <title>Timing Analysis Results</title>
     <meta charset="utf-8" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -52,8 +52,8 @@
     </style>
 </head>
 <body>
-    <h2>时序图分析结果</h2>
-    <div class="result" id="resultText">加载中...</div>
+    <h2>Timing Analysis Results</h2>
+    <div class="result" id="resultText">Loading...</div>
     <div class="svg-container">
         <div id="svgContent"></div>
     </div>
@@ -64,48 +64,48 @@
         function log(msg) { debugEl.innerHTML += new Date().toLocaleTimeString() + ': ' + msg + '<br>'; }
         
         function showResult(data) {
-            log('显示结果');
+            log('Show Results');
             if (data.info) {
                 document.getElementById('resultText').textContent = data.info;
             }
             if (data.svg) {
                 document.getElementById('svgContent').innerHTML = data.svg;
-                log('SVG 已加载');
+                log('SVG loaded');
             }
         }
         
         // 方式1：从全局变量读取结果（最可靠）
         if (typeof eda !== 'undefined' && eda._timingResult && eda._timingResult.info) {
-            log('从全局变量获取结果');
+            log('Getting result from global variable');
             showResult(eda._timingResult);
         } 
         // 方式2：通过 RPC 获取结果
         else if (typeof eda !== 'undefined' && eda.sys_MessageBus) {
-            log('eda 可用，尝试 RPC');
+            log('eda available, trying RPC');
             setTimeout(() => {
-                log('调用 RPC getLatestResult');
+                log('Calling RPC getLatestResult');
                 eda.sys_MessageBus.rpcCallPublic('getLatestResult', null, 10000).then(data => {
-                    log('RPC 返回: ' + JSON.stringify(data).substring(0, 100));
+                    log('RPC returned: ' + JSON.stringify(data).substring(0, 100));
                     if (data && data.info) {
                         showResult(data);
                     } else {
-                        document.getElementById('resultText').textContent = '无法获取结果数据';
+                        document.getElementById('resultText').textContent = 'Failed to get result data';
                     }
                 }).catch(err => {
-                    log('RPC 失败: ' + err);
-                    document.getElementById('resultText').textContent = '加载失败: ' + err;
+                    log('RPC failed: ' + err);
+                    document.getElementById('resultText').textContent = 'Load failed: ' + err;
                 });
             }, 1000);
             
             // 方式3：监听推送的结果数据
             eda.sys_MessageBus.subscribePublic('timingResultData', (data) => {
-                log('收到推送结果: ' + JSON.stringify(data).substring(0, 100));
+                log('Received pushed result: ' + JSON.stringify(data).substring(0, 100));
                 if (data) {
                     showResult(data);
                 }
             });
         } else {
-            document.getElementById('resultText').textContent = 'eda 对象不可用';
+            document.getElementById('resultText').textContent = 'eda object not available';
         }
     </script>
 </body>
