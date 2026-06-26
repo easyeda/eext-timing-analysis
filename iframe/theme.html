@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+    <title>界面主题</title>
+    <meta charset="utf-8" />
+    <style>
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #fff;
+            --text-secondary: #aaa;
+            --border-color: #444;
+            --accent-primary: #00aaff;
+        }
+        .theme-light {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --accent-primary: #007acc;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: Consolas, monospace;
+            padding: 20px;
+        }
+        h3 {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        .theme-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .theme-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .theme-option:hover {
+            border-color: var(--accent-primary);
+        }
+        .theme-option.selected {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary);
+            color: #fff;
+        }
+        .theme-option input {
+            display: none;
+        }
+        .theme-option .radio {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-option.selected .radio {
+            border-color: #fff;
+        }
+        .theme-option.selected .radio::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+        }
+        .theme-option .label {
+            font-size: 14px;
+        }
+        .theme-option .desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+        .theme-option.selected .desc {
+            color: #eee;
+        }
+        .hint {
+            margin-top: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <h3>选择界面主题</h3>
+    <div class="theme-options">
+        <label class="theme-option" id="option-dark">
+            <input type="radio" name="theme" value="dark">
+            <span class="radio"></span>
+            <span class="label">深色</span>
+            <span class="desc">（默认）</span>
+        </label>
+        <label class="theme-option" id="option-light">
+            <input type="radio" name="theme" value="light">
+            <span class="radio"></span>
+            <span class="label">浅色</span>
+        </label>
+        <label class="theme-option" id="option-system">
+            <input type="radio" name="theme" value="system">
+            <span class="radio"></span>
+            <span class="label">跟随系统</span>
+            <span class="desc">自动匹配系统主题</span>
+        </label>
+    </div>
+    <div class="hint">主题设置将在下次打开时序分析窗口时生效</div>
+    
+    <script>
+        var currentTheme = 'dark';
+        
+        async function init() {
+            try {
+                var theme = await eda.sys_Storage.getExtensionUserConfig('theme');
+                console.log('[Theme] Saved theme:', theme);
+                
+                var selectedTheme = theme || 'dark';
+                
+                if (selectedTheme === 'system') {
+                    selectedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                
+                if (selectedTheme === 'light') {
+                    document.body.classList.add('theme-light');
+                }
+                
+                var options = document.querySelectorAll('.theme-option');
+                options.forEach(function(o) {
+                    o.classList.remove('selected');
+                    var input = o.querySelector('input');
+                    input.checked = (input.value === selectedTheme);
+                });
+                
+                var selectedOption = document.getElementById('option-' + (theme || 'dark'));
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                }
+                
+                currentTheme = theme || 'dark';
+                console.log('[Theme] Selected:', selectedTheme, 'currentTheme:', currentTheme);
+            } catch (e) {
+                console.error('[Theme] Error:', e);
+                currentTheme = 'dark';
+                document.getElementById('option-dark').classList.add('selected');
+                document.getElementById('option-dark').querySelector('input').checked = true;
+            }
+        }
+        
+        document.querySelectorAll('.theme-option').forEach(function(option) {
+            option.addEventListener('click', function() {
+                var theme = this.querySelector('input').value;
+                document.querySelectorAll('.theme-option').forEach(function(o) {
+                    o.classList.remove('selected');
+                    o.querySelector('input').checked = false;
+                });
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+                
+                if (theme === 'light') {
+                    document.body.classList.add('theme-light');
+                } else {
+                    document.body.classList.remove('theme-light');
+                }
+                
+                eda.sys_Storage.setExtensionUserConfig('theme', theme).then(function() {
+                    eda.sys_Message.showToastMessage('主题已设置为: ' + (theme === 'dark' ? '深色' : theme === 'light' ? '浅色' : '跟随系统'));
+                });
+            });
+        });
+        
+        init();
+    </script>
+</body>
+</html>

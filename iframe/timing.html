@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+    <title>时序图分析</title>
+    <meta charset="utf-8" />
+    <style>
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #252525;
+            --text-primary: #fff;
+            --text-secondary: #aaa;
+            --border-color: #444;
+            --accent-primary: #00aaff;
+            --accent-hover: #0088cc;
+            --success: #28a745;
+            --cancel: #555;
+            --highlight-selected: #00aaff30;
+            --highlight-hover: #333;
+            --svg-bg: #1e1e1e;
+            --svg-bg-secondary: #2d2d2d;
+            --svg-border: #444;
+        }
+        .theme-light {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f0f0f0;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --accent-primary: #007acc;
+            --accent-hover: #005a9e;
+            --success: #28a745;
+            --cancel: #ccc;
+            --highlight-selected: #007acc30;
+            --highlight-hover: #e0e0e0;
+            --svg-bg: #ffffff;
+            --svg-bg-secondary: #f8f8f8;
+            --svg-border: #ddd;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            display: flex; 
+            height: 100vh; 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            font-family: Consolas, monospace; 
+            overflow: hidden;
+        }
+        .left-panel {
+            width: 320px;
+            min-width: 320px;
+            padding: 15px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .header-row .info {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 0;
+        }
+        #compInfo {
+            color: #fff !important;
+        }
+        .theme-light #compInfo {
+            color: #333 !important;
+        }
+        .theme-toggle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .theme-toggle:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        .theme-icon {
+            font-size: 14px;
+        }
+        .right-panel {
+            flex: 1;
+            padding: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        h2 { color: #ffcc00; margin-bottom: 12px; font-size: 18px; }
+        h3 { color: var(--text-secondary); margin: 12px 0 8px; font-size: 13px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+        .info, .header-row .info, #compInfo { color: #fff; font-size: 12px; margin-bottom: 12px; line-height: 1.5; white-space: pre-line; }
+        .theme-light .info, .theme-light #compInfo { color: #333; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 4px; }
+        select, input { 
+            width: 100%; 
+            padding: 8px 12px; 
+            background: var(--bg-secondary); 
+            border: 1px solid var(--border-color); 
+            border-radius: 4px; 
+            color: var(--text-primary); 
+            font-family: Consolas, monospace; 
+            font-size: 14px; 
+        }
+        input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        select:focus, input:focus { outline: none; border-color: var(--accent-primary); }
+        .btn-group { display: flex; gap: 8px; margin-top: 15px; }
+        .btn { 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            font-family: Consolas, monospace; 
+            font-size: 14px; 
+            cursor: pointer; 
+            flex: 1;
+        }
+        .btn-primary { background: var(--accent-primary); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-export { background: var(--success); color: #fff; }
+        .btn-export:hover { background: #218838; }
+        .btn-cancel { background: var(--cancel); color: var(--text-primary); }
+        .btn-cancel:hover { background: #444; }
+        
+        .export-group {
+            display: flex;
+            flex: 1;
+        }
+        .export-group .btn-export {
+            border-radius: 4px 0 0 4px;
+            border-right: none;
+            flex: 1;
+            min-width: 80px;
+        }
+        .export-dropdown {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            flex: 0 0 auto;
+        }
+        .export-dropdown select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: #218838;
+            border: none;
+            border-left: 1px solid #1e7a34;
+            color: #fff;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            padding: 10px 12px 10px 6px;
+            cursor: pointer;
+            border-radius: 0 4px 4px 0;
+            width: 15px;
+            overflow: hidden;
+        }
+        .export-dropdown select:hover {
+            background: #1e7a34;
+        }
+        .export-dropdown .dropdown-arrow {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 8px;
+            pointer-events: none;
+        }
+        
+        .net-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px;
+        }
+        .net-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .net-item:hover { background: var(--highlight-hover); }
+        .net-item.selected { background: var(--highlight-selected); border-left: 3px solid var(--accent-primary); }
+        .net-item.select-all { font-weight: bold; color: #0af; }
+        .net-item input[type="checkbox"] { width: auto; margin-right: 8px; }
+        .select-all-row { display: flex; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 4px; }
+        .select-all-row input[type="checkbox"] { width: auto; margin-right: 8px; }
+        .select-all-row .search-box { flex: 1; margin-left: 10px; }
+        .search-box input { 
+            width: 100%; 
+            padding: 4px 8px; 
+            background: var(--bg-tertiary); 
+            border: 1px solid var(--border-color); 
+            border-radius: 3px; 
+            color: var(--text-primary); 
+            font-family: Consolas, monospace; 
+            font-size: 12px; 
+        }
+        .search-box input:focus { outline: none; border-color: var(--accent-primary); }
+        .search-box input::placeholder { color: #666; }
+        
+        input.readonly, input[readonly], .input-readonly {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-secondary) !important;
+        }
+        
+        .input-thickness {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .input-thickness:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .result-info {
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            white-space: pre-line;
+            line-height: 1.5;
+            font-size: 12px;
+            margin-bottom: 12px;
+            max-height: 120px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+        .copy-btn:hover { background: #4a4a4a; color: var(--text-primary); }
+        
+        .svg-container {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            cursor: grab;
+        }
+        .svg-container:active { cursor: grabbing; }
+        
+        .svg-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+        
+        .svg-main {
+            display: flex;
+            flex: 1;
+        }
+        
+        .net-labels {
+            width: 70px;
+            min-width: 70px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .timing-header {
+            height: 60px;
+            min-height: 60px;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            background: var(--bg-secondary);
+            position: relative;
+            z-index: 1;
+            margin-top: -20px;
+            padding-top: 14px;
+            box-sizing: border-box;
+        }
+        
+        .timing-header .title {
+            color: var(--text-primary);
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .timing-header .subtitle {
+            color: var(--text-primary);
+            font-family: Consolas, monospace;
+            font-size: 11px;
+        }
+        
+        .net-label {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            font-family: Consolas, monospace;
+            font-size: 11px;
+            color: var(--text-primary);
+        }
+        
+        .net-label-in {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            font-family: Consolas, monospace;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+        
+        .timing-svg-wrapper {
+            position: relative;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        
+        .zoom-controls {
+            position: absolute;
+            bottom: 15px;
+            right: 30px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+        .zoom-btn {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover { background: #4a4a4a; }
+        
+        .param-row { display: flex; gap: 8px; }
+        .param-row .form-group { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="left-panel">
+        <div class="header-row">
+            <div class="info" id="compInfo">正在加载数据...</div>
+            <div class="theme-toggle" id="themeToggle" title="切换主题">
+                <span class="theme-icon">☀</span>
+            </div>
+        </div>
+        
+        <h3>选择网络（可多选）</h3>
+        <div class="net-list" id="netList">
+            <div style="color:#888;font-size:12px;padding:8px;">加载中...</div>
+        </div>
+        
+        <div class="param-row">
+            <div class="form-group">
+                <label>时钟频率 (MHz)</label>
+                <input type="number" id="freqInput" value="100" min="1" max="1000" step="1">
+            </div>
+            <div class="form-group">
+                <label>板厚 (mm)</label>
+                <input type="text" id="boardThicknessInput" value="1.6000  63.0mil" class="input-thickness">
+            </div>
+        </div>
+        
+        <div class="param-row">
+            <div class="form-group">
+                <label>建立时间 Tsu (ns)</label>
+                <input type="number" id="setupInput" value="5" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>保持时间 Th (ns)</label>
+                <input type="number" id="holdInput" value="2" min="0" step="0.1">
+            </div>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn btn-primary" id="calcBtn">计算</button>
+        </div>
+        <div class="btn-group" style="margin-top:8px;">
+            <div class="export-group">
+                <button class="btn btn-export" id="exportBtn" onclick="exportWithFormat()">导出 SVG</button>
+                <div class="export-dropdown">
+                    <select id="exportFormat" onchange="updateExportBtnText(this.value)">
+                        <option value="svg">SVG</option>
+                        <option value="png">PNG</option>
+                        <option value="jpg">JPG</option>
+                    </select>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+            </div>
+            <button class="btn btn-cancel" onclick="closeForm()">关闭</button>
+        </div>
+    </div>
+    
+    <div class="right-panel">
+        <div class="result-info" id="resultText">
+            <span id="resultContent">选择网络并设置参数后，点击计算查看结果</span>
+            <button class="copy-btn" onclick="copyResult()">复制</button>
+        </div>
+        <div class="svg-container" id="svgContainer">
+            <div class="svg-wrapper" id="svgWrapper">
+                <div class="timing-header" id="timingHeader">
+                    <div class="title"></div>
+                    <div class="subtitle"></div>
+                </div>
+                <div class="svg-main">
+                    <div class="net-labels" id="netLabels"></div>
+                    <div class="timing-svg-wrapper" id="timingSvgWrapper">
+                        <div id="svgContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()">+</button>
+                <button class="zoom-btn" onclick="zoomOut()">-</button>
+                <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+            </div>
+    </div>
+    
+    <script>
+        function log(msg) { 
+            console.log('[Timing]', msg);
+        }
+        
+        var componentData = null;
+        var selectedNets = [];
+        var autoUpdate = false;
+        var computedData = null;
+        var boardThicknessMM = 1.6000;
+        var boardThicknessMIL = 63.0;
+        var highlightedNets = [];
+        
+        var scaleX = 1;
+        var translateX = 0;
+        var MIN_SCALE = 0.5;
+        var isDragging = false;
+        var dragButton = null;
+        var startX, startY;
+        
+        var currentTheme = 'dark';
+        
+        async function initTheme() {
+            try {
+                var savedTheme = await eda.sys_Storage.getExtensionUserConfig('theme');
+                console.log('[Timing] Saved theme:', savedTheme);
+                if (!savedTheme) {
+                    savedTheme = 'dark';
+                    await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
+                    console.log('[Timing] Set default theme to dark');
+                }
+                if (savedTheme === 'light') {
+                    currentTheme = 'light';
+                    document.body.classList.add('theme-light');
+                } else if (savedTheme === 'system') {
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    currentTheme = prefersDark ? 'dark' : 'light';
+                    if (currentTheme === 'light') {
+                        document.body.classList.add('theme-light');
+                    }
+                } else {
+                    currentTheme = 'dark';
+                }
+            } catch (e) {
+                console.warn('[Timing] Error init theme:', e);
+                currentTheme = 'dark';
+                try { await eda.sys_Storage.setExtensionUserConfig('theme', 'dark'); } catch {}
+            }
+            updateThemeToggleIcon();
+        }
+        
+        function updateBoardThickness(value) {
+            var match = String(value).match(/^([\d.]+)/);
+            if (match) {
+                var mm = parseFloat(match[1]);
+                if (!isNaN(mm) && mm > 0) {
+                    boardThicknessMM = mm;
+                    boardThicknessMIL = mm * 39.37;
+                    var inputEl = document.getElementById('boardThicknessInput');
+                    if (inputEl) {
+                        inputEl.value = boardThicknessMM.toFixed(4) + '  ' + boardThicknessMIL.toFixed(1) + 'mil';
+                        inputEl.dataset.mm = boardThicknessMM.toFixed(4);
+                    }
+                }
+            }
+        }
+        
+        function updateThemeToggleIcon() {
+            var toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
+            var icon = toggle.querySelector('.theme-icon');
+            if (document.body.classList.contains('theme-light')) {
+                icon.textContent = '🌙';
+            } else {
+                icon.textContent = '☀';
+            }
+        }
+        
+        async function toggleTheme() {
+            var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            try {
+                await eda.sys_Storage.setExtensionUserConfig('theme', newTheme);
+                currentTheme = newTheme;
+                if (newTheme === 'light') {
+                    document.body.classList.add('theme-light');
+                } else {
+                    document.body.classList.remove('theme-light');
+                }
+                updateThemeToggleIcon();
+                if (computedData) {
+                    updateDisplay();
+                }
+            } catch (e) {
+                console.warn('[Timing] Error toggle theme:', e);
+            }
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            eda.sys_Storage.getExtensionUserConfig('theme').then(function(savedTheme) {
+                if (savedTheme === 'system') {
+                    currentTheme = e.matches ? 'dark' : 'light';
+                    if (currentTheme === 'light') {
+                        document.body.classList.add('theme-light');
+                    } else {
+                        document.body.classList.remove('theme-light');
+                    }
+                }
+            });
+        });
+        
+        var svgContainer = document.getElementById('svgContainer');
+        var svgContent = document.getElementById('svgContent');
+        var timingSvgWrapper = document.getElementById('timingSvgWrapper');
+        
+        function updateTransform() {
+            svgContent.style.transform = 'scaleX(' + scaleX + ')';
+            svgContent.style.transformOrigin = '0 0';
+            var svg = svgContent.querySelector('svg');
+            if (svg) {
+                var verticalLines = svg.querySelectorAll('line[data-orientation="vertical"]');
+                verticalLines.forEach(function(line) {
+                    var originalWidth = parseFloat(line.getAttribute('data-original-width')) || 2;
+                    line.setAttribute('stroke-width', (originalWidth / scaleX).toString());
+                });
+                var circles = svg.querySelectorAll('ellipse[data-orientation="circle"]');
+                circles.forEach(function(ellipse) {
+                    var originalRx = parseFloat(ellipse.getAttribute('data-original-rx')) || 4;
+                    var originalStrokeWidth = parseFloat(ellipse.getAttribute('data-original-stroke-width')) || 1;
+                    ellipse.setAttribute('rx', (originalRx / scaleX).toString());
+                    ellipse.setAttribute('stroke-width', (originalStrokeWidth / scaleX).toString());
+                });
+                var textGroups = svg.querySelectorAll('g[data-orientation="text"]');
+                textGroups.forEach(function(g) {
+                    var originalX = parseFloat(g.getAttribute('data-original-x')) || 0;
+                    var scale = 1 / scaleX;
+                    g.setAttribute('transform', 'translate(' + originalX + ', 0) scale(' + scale + ', 1) translate(-' + originalX + ', 0)');
+                });
+                var boxRects = svg.querySelectorAll('rect[data-orientation="box"]');
+                boxRects.forEach(function(rect) {
+                    var originalWidth = parseFloat(rect.getAttribute('data-original-width')) || 1;
+                    rect.setAttribute('stroke-width', (originalWidth / scaleX).toString());
+                });
+            }
+        }
+        
+        function zoomIn() {
+            if (scaleX * 1.2 >= MIN_SCALE) {
+                scaleX *= 1.2;
+                timingSvgWrapper.scrollLeft = timingSvgWrapper.scrollLeft * 1.2;
+            }
+            updateTransform();
+        }
+        
+        function zoomOut() {
+            if (scaleX / 1.2 >= MIN_SCALE) {
+                scaleX /= 1.2;
+                timingSvgWrapper.scrollLeft = timingSvgWrapper.scrollLeft / 1.2;
+            }
+            updateTransform();
+        }
+        
+        function resetZoom() {
+            scaleX = 1;
+            translateX = 0;
+            svgContainer.scrollTop = 0;
+            timingSvgWrapper.scrollLeft = 0;
+            updateTransform();
+        }
+        
+        svgContainer.addEventListener('wheel', function(e) {
+            var svgRect = timingSvgWrapper.getBoundingClientRect();
+            var mouseX = e.clientX - svgRect.left;
+            
+            if (e.ctrlKey) {
+                e.preventDefault();
+                var delta = e.deltaY > 0 ? 60 : -60;
+                svgContainer.scrollTop += delta;
+                updateTransform();
+            } else if (e.shiftKey) {
+                e.preventDefault();
+                timingSvgWrapper.scrollLeft += e.deltaY;
+            } else {
+                e.preventDefault();
+                var svgRect = timingSvgWrapper.getBoundingClientRect();
+                var mouseX = e.clientX - svgRect.left;
+                var contentX = (mouseX + timingSvgWrapper.scrollLeft) / scaleX;
+                var delta = e.deltaY > 0 ? 0.9 : 1.1;
+                var newScale = scaleX * delta;
+                if (newScale < MIN_SCALE) newScale = MIN_SCALE;
+                scaleX = newScale;
+                var newScrollLeft = contentX * newScale - mouseX;
+                if (newScrollLeft < 0) newScrollLeft = 0;
+                timingSvgWrapper.scrollLeft = newScrollLeft;
+                updateTransform();
+            }
+        });
+        
+        svgContainer.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('zoom-btn')) return;
+            if (e.button === 0 || e.button === 1) {
+                e.preventDefault();
+                isDragging = true;
+                dragButton = e.button;
+                startX = e.clientX;
+                startY = e.clientY + svgContainer.scrollTop;
+                svgContainer.style.cursor = 'grabbing';
+            }
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            if (dragButton !== 0 && dragButton !== 1) return;
+            var deltaX = e.clientX - startX;
+            timingSvgWrapper.scrollLeft = Math.max(0, timingSvgWrapper.scrollLeft - deltaX);
+            startX = e.clientX;
+            svgContainer.scrollTop = startY - e.clientY;
+            updateTransform();
+        });
+        
+        document.addEventListener('mouseup', function(e) {
+            if (e.button === 0 || e.button === 1) {
+                isDragging = false;
+                dragButton = null;
+                svgContainer.style.cursor = 'grab';
+            }
+        });
+        
+        var powerNets = ['GND', '3V3', '5V', 'VCC', 'VDD', 'AVDD', 'DVDD', 'AGND', 'DGND', 'VSS', '12V', '24V', '1V8', '2V5', '1V2', '1V5', '1V0'];
+        
+        function initForm(data) {
+            if (!data) return;
+            componentData = data;
+            log('表单初始化成功');
+            document.getElementById('compInfo').textContent = data.info;
+            
+            var netList = document.getElementById('netList');
+            netList.innerHTML = '';
+            
+            var selectAllRow = document.createElement('div');
+            selectAllRow.className = 'select-all-row';
+            selectAllRow.innerHTML = '<input type="checkbox" id="selectAll"> <span>全选</span>';
+            netList.appendChild(selectAllRow);
+            
+            var searchBox = document.createElement('div');
+            searchBox.className = 'search-box';
+            searchBox.innerHTML = '<input type="text" id="netSearch" placeholder="搜索网络...">';
+            selectAllRow.appendChild(searchBox);
+            
+            var selectAllCheckbox = document.getElementById('selectAll');
+            selectAllCheckbox.addEventListener('change', function() {
+                var searchText = (document.getElementById('netSearch').value || '').toLowerCase();
+                var allItems = netList.querySelectorAll('.net-item:not(.select-all)');
+                if (this.checked) {
+                    selectedNets = [];
+                    highlightedNets = [];
+                    allItems.forEach(function(item) {
+                        var netName = item.dataset.net.toLowerCase();
+                        if (searchText === '' || netName.indexOf(searchText) !== -1) {
+                            item.classList.add('selected');
+                            var net = item.dataset.net;
+                            var origIdx = parseInt(item.dataset.index, 10);
+                            selectedNets.push(origIdx);
+                            highlightedNets.push(net);
+                            var cb = item.querySelector('input');
+                            if (cb) cb.checked = true;
+                            try { eda.pcb_Net.highlightNet(net); } catch {}
+                        }
+                    });
+                } else {
+                    var searchableItems = [];
+                    allItems.forEach(function(item) {
+                        var netName = item.dataset.net.toLowerCase();
+                        if (searchText === '' || netName.indexOf(searchText) !== -1) {
+                            searchableItems.push(item);
+                        }
+                    });
+                    var searchableIndices = new Set(
+                        Array.from(searchableItems).map(function(item) { return parseInt(item.dataset.index, 10); })
+                    );
+                    var searchableNets = new Set(
+                        Array.from(searchableItems).map(function(item) { return item.dataset.net; })
+                    );
+                    searchableItems.forEach(function(item) {
+                        item.classList.remove('selected');
+                        var cb = item.querySelector('input');
+                        if (cb) cb.checked = false;
+                        try { eda.pcb_Net.unhighlightNet(item.dataset.net); } catch {}
+                    });
+                    selectedNets = selectedNets.filter(function(idx) { return !searchableIndices.has(idx); });
+                    highlightedNets = highlightedNets.filter(function(net) { return !searchableNets.has(net); });
+                }
+                log('全选: ' + this.checked + ', 选中: ' + selectedNets.length);
+                computeTimingData();
+            });
+            
+            for (let i = 0; i < (data.commonNets || []).length; i++) {
+                let netInfo = data.commonNets[i];
+                let netName = netInfo.net;
+                let netUpper = String(netName).toUpperCase();
+                let isPowerNet = powerNets.some(function(pn) { 
+                    return netUpper === pn || netUpper.startsWith(pn + '_') || netUpper.endsWith('_' + pn); 
+                });
+                if (isPowerNet) continue;
+                
+                let div = document.createElement('div');
+                div.className = 'net-item';
+                div.dataset.index = i;
+                div.dataset.net = netName;
+                div.innerHTML = '<input type="checkbox" value="' + i + '"> ' + 
+                    (data.nets[i] || netInfo.net);
+                
+                let checkbox = div.querySelector('input');
+                let itemDiv = div;
+                let currentIndex = i;
+                
+                // 添加鼠标悬停临时高亮功能
+                // 使用立即执行函数表达式(IIFE)来捕获当前的netName值
+                (function(currentNetName) {
+                    itemDiv.addEventListener('mouseenter', function() {
+                        // 只对未选中的网络应用临时高亮
+                        var index = parseInt(this.dataset.index, 10);
+                        if (selectedNets.indexOf(index) === -1) {
+                            try { 
+                                eda.pcb_Net.highlightNet(currentNetName); 
+                            } catch (e) {
+                                // 忽略高亮错误，避免频繁事件导致的问题
+                            }
+                        }
+                    });
+                    
+                    itemDiv.addEventListener('mouseleave', function() {
+                        // 只对未选中的网络取消临时高亮
+                        var index = parseInt(this.dataset.index, 10);
+                        if (selectedNets.indexOf(index) === -1) {
+                            try { 
+                                eda.pcb_Net.unhighlightNet(currentNetName); 
+                            } catch (e) {
+                                // 忽略取消高亮错误
+                            }
+                        }
+                    });
+                })(netName);
+                
+                itemDiv.addEventListener('click', (function(idx, el, cb) {
+                    return function(e) {
+                        if (e.target !== cb) {
+                            cb.checked = !cb.checked;
+                        }
+                        cb.dispatchEvent(new Event('change'));
+                    };
+                })(currentIndex, itemDiv, checkbox));
+                checkbox.addEventListener('change', (function(index, el) {
+                    return function() {
+                        var net = el.dataset.net;
+                        if (this.checked) {
+                            el.classList.add('selected');
+                            if (selectedNets.indexOf(index) === -1) selectedNets.push(index);
+                            try { eda.pcb_Net.highlightNet(net); } catch {}
+                            if (highlightedNets.indexOf(net) === -1) highlightedNets.push(net);
+                        } else {
+                            el.classList.remove('selected');
+                            selectedNets = selectedNets.filter(function(n) { return n !== index; });
+                            try { eda.pcb_Net.unhighlightNet(net); } catch {}
+                            highlightedNets = highlightedNets.filter(function(n) { return n !== net; });
+                        }
+                        var selectAllBox = document.getElementById('selectAll');
+                        if (selectAllBox && !this.checked && selectAllBox.checked) {
+                            var netItems = document.querySelectorAll('.net-item:not(.select-all) input');
+                            var allChecked = Array.from(netItems).every(function(cb) { return cb.checked; });
+                            if (!allChecked) selectAllBox.checked = false;
+                        }
+                        log('选中网络: ' + selectedNets.length + ' [' + selectedNets.join(',') + ']');
+                        computeTimingData();
+                    };
+                })(i, itemDiv));
+                
+                netList.appendChild(div);
+            }
+            
+            if (data.commonNets.length > 0) {
+                var allItems = netList.querySelectorAll('.net-item:not(.select-all)');
+                if (allItems.length > 0) {
+                    var firstItem = allItems[0];
+                    var firstCheck = firstItem.querySelector('input');
+                    var firstOrigIdx = parseInt(firstItem.dataset.index, 10);
+                    if (firstCheck) {
+                        firstCheck.checked = true;
+                        selectedNets = [firstOrigIdx];
+                        firstItem.classList.add('selected');
+                        var firstNet = firstItem.dataset.net;
+                        try { eda.pcb_Net.highlightNet(firstNet); } catch {}
+                        highlightedNets = [firstNet];
+                    }
+                }
+            }
+            
+            updatePeriod();
+            if (selectedNets.length > 0) {
+                computeTimingData();
+            }
+            
+            document.getElementById('netSearch').addEventListener('input', function() {
+                var searchText = this.value.toLowerCase();
+                var allItems = netList.querySelectorAll('.net-item:not(.select-all)');
+                allItems.forEach(function(item) {
+                    var netName = item.dataset.net.toLowerCase();
+                    if (searchText === '' || netName.indexOf(searchText) !== -1) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        function updatePeriod() {
+            var freq = parseFloat(document.getElementById('freqInput').value) || 100;
+            var period = 1000 / freq;
+            document.getElementById('periodInput').value = period.toFixed(2);
+        }
+        
+        function calculate() {
+            computedData = computeTimingData();
+            updateDisplay();
+        }
+        
+        function computeTimingData() {
+            if (!componentData || selectedNets.length === 0) {
+                return null;
+            }
+            
+            var freq = parseFloat(document.getElementById('freqInput').value);
+            var setup = parseFloat(document.getElementById('setupInput').value);
+            var hold = parseFloat(document.getElementById('holdInput').value);
+            
+            if (isNaN(freq) || freq <= 0) {
+                log('频率无效');
+                return null;
+            }
+            
+            var period = 1000 / freq;
+            var dist = Math.abs(componentData.x2 - componentData.x1) + Math.abs(componentData.y2 - componentData.y1);
+            
+            var signals = selectedNets.map(function(idx) {
+                var net = componentData.commonNets[idx];
+                if (!net) return null;
+                
+                var traceLen = (componentData.netLengths && componentData.netLengths[net.net]) 
+                    ? componentData.netLengths[net.net] : null;
+                var viaCount = net.viaCount || 0;
+                var viaCompensation = viaCount * boardThicknessMM * 39.37;
+                var useLen = traceLen !== null ? traceLen : dist;
+                var totalLen = useLen + viaCompensation;
+                var pd = totalLen * 0.0254 / 152.4;
+                var margin = period - (setup + hold + pd);
+                
+                return {
+                    net: net.net,
+                    sourcePin: net.sourcePin,
+                    targetPin: net.targetPin,
+                    pd: pd,
+                    margin: margin,
+                    dist: dist,
+                    traceLen: traceLen,
+                    viaCount: viaCount,
+                    viaCompensation: viaCompensation,
+                    totalLen: totalLen
+                };
+            }).filter(function(s) { return s !== null; });
+            
+            if (signals.length === 0) {
+                log('无有效信号');
+                return null;
+            }
+            
+            return {
+                freq: freq,
+                period: period,
+                setup: setup,
+                hold: hold,
+                dist: dist,
+                signals: signals
+            };
+        }
+        
+        function updateDisplay() {
+            if (!computedData) {
+                document.getElementById('resultContent').textContent = '请选择至少一个网络';
+                document.getElementById('svgContent').innerHTML = '';
+                document.getElementById('netLabels').innerHTML = '';
+                return;
+            }
+            
+            var freq = computedData.freq;
+            var period = computedData.period;
+            var setup = computedData.setup;
+            var hold = computedData.hold;
+            var dist = computedData.dist;
+            var signals = computedData.signals;
+            
+            var resultTxt = '时钟: ' + freq.toFixed(1) + ' MHz | 周期: ' + period.toFixed(2) + ' ns\n';
+            resultTxt += 'Tsu: ' + setup.toFixed(2) + ' ns | Th: ' + hold.toFixed(2) + ' ns\n';
+            resultTxt += '--------------------------------------------\n';
+            
+            signals.forEach(function(sig, i) {
+                var manhattanStr = sig.dist.toFixed(0) + 'mil';
+                var viaCompStr = (sig.viaCount > 0) ? (' | 过孔补偿+' + Math.round(sig.viaCompensation) + 'mil(' + sig.viaCount + '个)') : ' | 过孔补偿+0mil';
+                var totalLenStr = sig.totalLen.toFixed(0) + 'mil';
+                resultTxt += '[' + (i+1) + '] ' + sig.net + ': 曼哈顿=' + manhattanStr + viaCompStr + ' | 实际长度=' + totalLenStr + ' | Tpd=' + sig.pd.toFixed(2) + 'ns | 余量=' + sig.margin.toFixed(2) + 'ns ' + (sig.margin > 0 ? '✓ PASS' : '✗ FAIL') + '\n';
+            });
+            
+            document.getElementById('resultContent').textContent = resultTxt;
+            
+            renderNetLabels(signals);
+            renderTimingHeader(componentData.des1, componentData.des2, signals.length, freq, period, setup, hold);
+            
+            var svg = makeMultiSignalSVG(
+                componentData.des1, componentData.des2, 
+                componentData.name1, componentData.name2,
+                signals, freq, period, setup, hold, dist, false
+            );
+            
+            document.getElementById('svgContent').innerHTML = svg;
+            resetZoom();
+            log('更新完成, ' + signals.length + '路信号');
+        }
+        
+        function renderNetLabels(signals) {
+            var netLabelsDiv = document.getElementById('netLabels');
+            netLabelsDiv.innerHTML = '';
+            
+            var clkLabel = document.createElement('div');
+            clkLabel.className = 'net-label';
+            clkLabel.style.color = '#fcc';
+            clkLabel.style.height = '60px';
+            clkLabel.textContent = 'CLK';
+            netLabelsDiv.appendChild(clkLabel);
+            
+            var colors = ['#0f8', '#0af', '#f0f', '#fa0', '#0fa'];
+            
+            signals.forEach(function(sig, i) {
+                var color = colors[i % colors.length];
+                
+                var labelRow = document.createElement('div');
+                labelRow.style.display = 'flex';
+                labelRow.style.flexDirection = 'column';
+                labelRow.style.justifyContent = 'center';
+                labelRow.style.height = '60px';
+                labelRow.style.paddingLeft = '8px';
+                
+                var labelOut = document.createElement('div');
+                labelOut.className = 'net-label-name';
+                labelOut.style.color = color;
+                labelOut.style.fontSize = '10px';
+                labelOut.style.fontFamily = 'Consolas, monospace';
+                labelOut.textContent = sig.net;
+                labelRow.appendChild(labelOut);
+                
+                var labelIn = document.createElement('div');
+                labelIn.className = 'net-label-name';
+                labelIn.style.color = color;
+                labelIn.style.fontSize = '10px';
+                labelIn.style.fontFamily = 'Consolas, monospace';
+                labelIn.textContent = sig.net + '_IN';
+                labelRow.appendChild(labelIn);
+                
+                netLabelsDiv.appendChild(labelRow);
+            });
+        }
+        
+        function renderTimingHeader(sd, td, signalCount, freq, period, su, th) {
+            var headerDiv = document.getElementById('timingHeader');
+            headerDiv.querySelector('.title').textContent = 'Timing: ' + sd + ' → ' + td + ' (' + signalCount + ' signals)';
+            headerDiv.querySelector('.subtitle').textContent = freq.toFixed(1) + ' MHz | Period: ' + period.toFixed(2) + ' ns | Tsu: ' + su.toFixed(1) + 'ns | Th: ' + th.toFixed(1) + 'ns';
+        }
+        
+        function makeMultiSignalSVG(sd, td, sn1, sn2, signals, freq, period, su, th, dist, includeExtras) {
+            var isLight = document.body.classList.contains('theme-light');
+            var svgBg = isLight ? '#ffffff' : '#1e1e1e';
+            var svgBgSecondary = isLight ? '#f8f8f8' : '#2d2d2d';
+            var svgBorder = isLight ? '#ddd' : '#444';
+            var textColor = isLight ? '#333' : '#fff';
+            var textSecondary = isLight ? '#666' : '#aaa';
+            
+            var signalCount = signals.length;
+            var rowHeight = 60;
+            var headerHeight = 60;
+            var footerHeight = 120;
+            
+            var labelWidth = includeExtras ? 80 : 0;
+            var signalStartX = includeExtras ? 100 : 20;
+            var w = 700 + labelWidth;
+            var h = headerHeight + signalCount * rowHeight + 60;
+            var lm = signalStartX, rm = 180, aw = w - lm - rm, tp2 = period * 1.5, ts = aw / tp2;
+            
+            var s = '<svg width="' + w + '" height="' + h + '" xmlns="http://www.w3.org/2000/svg">';
+            s += '<rect width="' + w + '" height="' + h + '" fill="' + svgBg + '"/>';
+            
+            if (includeExtras) {
+                s += '<rect x="0" y="0" width="' + labelWidth + '" height="' + h + '" fill="' + svgBgSecondary + '"/>';
+                s += '<rect x="0" y="0" width="' + w + '" height="' + headerHeight + '" fill="' + svgBgSecondary + '"/>';
+                s += '<rect x="0" y="' + (h - footerHeight) + '" width="' + w + '" height="' + footerHeight + '" fill="' + svgBgSecondary + '"/>';
+                s += '<line x1="0" y1="' + headerHeight + '" x2="' + w + '" y2="' + headerHeight + '" stroke="' + svgBorder + '" stroke-width="1"/>';
+                s += '<line x1="0" y1="' + (h - footerHeight) + '" x2="' + w + '" y2="' + (h - footerHeight) + '" stroke="' + svgBorder + '" stroke-width="1"/>';
+                s += '<line x1="' + labelWidth + '" y1="0" x2="' + labelWidth + '" y2="' + h + '" stroke="' + svgBorder + '" stroke-width="1"/>';
+                
+                var labelX = 8;
+                var labelY = 48;
+                s += '<text x="' + labelX + '" y="' + labelY + '" fill="#fcc" font-family="Consolas,monospace" font-size="10" font-weight="bold">CLK</text>';
+                
+                var colors = ['#0f8', '#0af', '#f0f', '#fa0', '#0fa'];
+                signals.forEach(function(sig, i) {
+                    var color = colors[i % colors.length];
+                    var rowY = headerHeight + i * rowHeight + 28;
+                    var rowY2 = rowY + 18;
+                    s += '<text x="' + labelX + '" y="' + rowY + '" fill="' + color + '" font-family="Consolas,monospace" font-size="10">' + sig.net + '</text>';
+                    s += '<text x="' + labelX + '" y="' + rowY2 + '" fill="' + color + '" font-family="Consolas,monospace" font-size="9" opacity="0.7">' + sig.net + '_IN</text>';
+                });
+                
+                var infoX = w - 160;
+                var infoY = 20;
+                s += '<text x="' + infoX + '" y="' + infoY + '" fill="#ffcc00" font-family="Consolas,monospace" font-size="11" font-weight="bold">Timing Summary</text>';
+                s += '<line x1="' + infoX + '" y1="' + (infoY + 6) + '" x2="' + (infoX + 140) + '" y2="' + (infoY + 6) + '" stroke="#555"/>';
+                s += '<text x="' + infoX + '" y="' + (infoY + 20) + '" fill="#fff" font-family="Consolas,monospace" font-size="10">Freq: ' + freq.toFixed(1) + ' MHz</text>';
+                s += '<text x="' + infoX + '" y="' + (infoY + 34) + '" fill="#fff" font-family="Consolas,monospace" font-size="10">Period: ' + period.toFixed(2) + ' ns</text>';
+                s += '<text x="' + infoX + '" y="' + (infoY + 48) + '" fill="#ff6666" font-family="Consolas,monospace" font-size="10">Tsu: ' + su.toFixed(2) + ' ns</text>';
+                s += '<text x="' + infoX + '" y="' + (infoY + 62) + '" fill="#66ff66" font-family="Consolas,monospace" font-size="10">Th: ' + th.toFixed(2) + ' ns</text>';
+            }
+            
+            var lx = lm, cx = lm + period * ts;
+            var clkY = 40;
+            var hp = period / 2 * ts;
+            var indicatorY = 10;
+            
+            s += '<line x1="' + lm + '" y1="' + clkY + '" x2="' + (lm + hp) + '" y2="' + clkY + '" stroke="#fcc" stroke-width="2"/>';
+            s += '<line x1="' + (lm + hp) + '" y1="' + clkY + '" x2="' + (lm + hp) + '" y2="' + (clkY - 20) + '" stroke="#fcc" stroke-width="2" data-orientation="vertical" data-original-width="2"/>';
+            s += '<line x1="' + (lm + hp) + '" y1="' + (clkY - 20) + '" x2="' + (lm + period*ts) + '" y2="' + (clkY - 20) + '" stroke="#fcc" stroke-width="2"/>';
+            s += '<line x1="' + (lm + period*ts) + '" y1="' + (clkY - 20) + '" x2="' + (lm + period*ts) + '" y2="' + clkY + '" stroke="#fcc" stroke-width="2" data-orientation="vertical" data-original-width="2"/>';
+            var b1 = lm + period * ts;
+            s += '<line x1="' + b1 + '" y1="' + clkY + '" x2="' + (b1 + hp) + '" y2="' + clkY + '" stroke="#fcc" stroke-width="2"/>';
+            s += '<line x1="' + (b1 + hp) + '" y1="' + clkY + '" x2="' + (b1 + hp) + '" y2="' + (clkY - 20) + '" stroke="#fcc" stroke-width="2" data-orientation="vertical" data-original-width="2"/>';
+            
+            s += '<line x1="' + lx + '" y1="' + indicatorY + '" x2="' + lx + '" y2="' + (h - 40) + '" stroke="#0f8" stroke-width="1.5" stroke-dasharray="5,3" data-orientation="vertical" data-original-width="1.5"/>';
+            s += '<g data-orientation="text" data-original-x="' + lx + '"><text x="' + lx + '" y="' + (indicatorY + 5) + '" text-anchor="middle" fill="#0f8" font-family="Consolas,monospace" font-size="10" font-weight="bold">Launch</text></g>';
+            s += '<line x1="' + cx + '" y1="' + indicatorY + '" x2="' + cx + '" y2="' + (h - 40) + '" stroke="#f66" stroke-width="1.5" stroke-dasharray="5,3" data-orientation="vertical" data-original-width="1.5"/>';
+            s += '<g data-orientation="text" data-original-x="' + cx + '"><text x="' + cx + '" y="' + (indicatorY + 5) + '" text-anchor="middle" fill="#f66" font-family="Consolas,monospace" font-size="10" font-weight="bold">Capture</text></g>';
+            
+            var gridColor = isLight ? '#aaa' : '#bbb';
+            var gridStyle = isLight ? 'solid' : 'dotted';
+            
+            var timeAxisY = 30;
+            s += '<line x1="' + lm + '" y1="' + timeAxisY + '" x2="' + (lm + tp2 * ts) + '" y2="' + timeAxisY + '" stroke="#666" stroke-width="1"/>';
+            
+            for (var t = 0; t <= tp2; t += period / 8) {
+                var x = lm + t * ts;
+                var isMain = Math.abs(t % period) < 0.01;
+                var isSub = Math.abs(t % (period / 2)) < 0.01;
+                s += '<line x1="' + x + '" y1="' + (isMain ? 20 : 22) + '" x2="' + x + '" y2="' + (timeAxisY + 3) + '" stroke="' + (isMain ? '#666' : '#888') + '" stroke-width="' + (isMain ? '1' : '0.5') + '" data-orientation="vertical" data-original-width="' + (isMain ? '1' : '0.5') + '"/>';
+                if (isMain || isSub) {
+                    s += '<g data-orientation="text" data-original-x="' + x + '"><text x="' + x + '" y="' + (timeAxisY + 15) + '" text-anchor="middle" fill="#666" font-family="Consolas,monospace" font-size="12" font-weight="bold">' + t.toFixed(1) + 'ns</text></g>';
+                }
+            }
+            
+            var gridEndY = headerHeight + signalCount * rowHeight + rowHeight;
+            for (var t = 0; t <= tp2; t += period / 8) {
+                var x = lm + t * ts;
+                s += '<line x1="' + x + '" y1="' + timeAxisY + '" x2="' + x + '" y2="' + gridEndY + '" stroke="' + gridColor + '" stroke-width="0.5" stroke-dasharray="3,3" data-orientation="vertical" data-original-width="0.5"/>';
+            }
+            
+            var colors = ['#0f8', '#0af', '#f0f', '#fa0', '#0fa'];
+            signals.forEach(function(sig, i) {
+                var dataY = headerHeight + i * rowHeight + 25;
+                var color = colors[i % colors.length];
+                var ox1 = lx + 0.3 * ts, ox2 = b1 + 0.3 * ts, ix1 = ox1 + sig.pd * ts, ix2 = ox2 + sig.pd * ts;
+                
+                s += '<line x1="' + lm + '" y1="' + dataY + '" x2="' + ox1 + '" y2="' + dataY + '" stroke="' + color + '" stroke-width="2"/>';
+                s += '<line x1="' + ox1 + '" y1="' + dataY + '" x2="' + ox1 + '" y2="' + (dataY - 16) + '" stroke="' + color + '" stroke-width="2" data-orientation="vertical" data-original-width="2"/>';
+                s += '<line x1="' + ox1 + '" y1="' + (dataY - 16) + '" x2="' + ox2 + '" y2="' + (dataY - 16) + '" stroke="' + color + '" stroke-width="2"/>';
+                s += '<line x1="' + ox2 + '" y1="' + (dataY - 16) + '" x2="' + ox2 + '" y2="' + dataY + '" stroke="' + color + '" stroke-width="2" data-orientation="vertical" data-original-width="2"/>';
+                s += '<line x1="' + ox2 + '" y1="' + dataY + '" x2="' + (lm + tp2*ts) + '" y2="' + dataY + '" stroke="' + color + '" stroke-width="2"/>';
+                
+                var dataInY = dataY + 25;
+                s += '<line x1="' + lm + '" y1="' + dataInY + '" x2="' + ix1 + '" y2="' + dataInY + '" stroke="' + color + '" stroke-width="2"/>';
+                s += '<line x1="' + ix1 + '" y1="' + dataInY + '" x2="' + ix1 + '" y2="' + (dataInY - 16) + '" stroke="' + color + '" stroke-width="2" data-orientation="vertical" data-original-width="2"/>';
+                s += '<line x1="' + ix1 + '" y1="' + (dataInY - 16) + '" x2="' + ix2 + '" y2="' + (dataInY - 16) + '" stroke="' + color + '" stroke-width="2"/>';
+                s += '<ellipse cx="' + cx + '" cy="' + (dataInY - 16) + '" rx="4" ry="4" fill="#f66" stroke="#fff" stroke-width="1" data-orientation="circle" data-original-rx="4" data-original-stroke-width="1"/>';
+                s += '<line x1="' + ix2 + '" y1="' + (dataInY - 16) + '" x2="' + ix2 + '" y2="' + dataInY + '" stroke="' + color + '" stroke-width="2" data-orientation="vertical" data-original-width="2"/>';
+                s += '<line x1="' + ix2 + '" y1="' + dataInY + '" x2="' + (lm + tp2*ts) + '" y2="' + dataInY + '" stroke="' + color + '" stroke-width="2"/>';
+            });
+            
+            var lastSignalIdx = signals.length - 1;
+            var lastDataInY = headerHeight + lastSignalIdx * rowHeight + 50;
+            
+            var setupWinX = cx - su * ts;
+            var setupWinW = su * ts;
+            var holdWinX = cx;
+            var holdWinW = th * ts;
+            var winBaseY = lastDataInY + 25;
+            var winH = 22;
+            
+            s += '<rect x="' + setupWinX + '" y="' + (winBaseY - winH) + '" width="' + setupWinW + '" height="' + winH + '" fill="rgba(255, 200, 0, 0.25)" stroke="#ffc800" stroke-width="1" stroke-dasharray="3,2" data-orientation="box" data-original-width="1"/>';
+            s += '<g data-orientation="text" data-original-x="' + (setupWinX + setupWinW/2) + '"><text x="' + (setupWinX + setupWinW/2) + '" y="' + (winBaseY - 4) + '" text-anchor="middle" fill="#ffc800" font-family="Consolas,monospace" font-size="15" font-weight="bold">Tsu ' + su.toFixed(1) + 'ns</text></g>';
+            
+            s += '<rect x="' + holdWinX + '" y="' + (winBaseY - winH) + '" width="' + holdWinW + '" height="' + winH + '" fill="rgba(0, 255, 136, 0.25)" stroke="#00ff88" stroke-width="1" stroke-dasharray="3,2" data-orientation="box" data-original-width="1"/>';
+            s += '<g data-orientation="text" data-original-x="' + (holdWinX + holdWinW/2) + '"><text x="' + (holdWinX + holdWinW/2) + '" y="' + (winBaseY - 4) + '" text-anchor="middle" fill="#00ff88" font-family="Consolas,monospace" font-size="15" font-weight="bold">Th ' + th.toFixed(1) + 'ns</text></g>';
+            
+            s += '</svg>';
+            return s;
+        }
+        
+        function copyResult() {
+            var text = document.getElementById('resultContent').textContent;
+            navigator.clipboard.writeText(text).then(function() {
+                log('结果已复制到剪贴板');
+                try {
+                    eda.sys_Message.showToastMessage('结果已复制到剪贴板');
+                } catch (e) {
+                    console.warn('[Timing] Toast error:', e);
+                }
+            }).catch(function() {
+                log('复制失败');
+                try {
+                    eda.sys_Message.showToastMessage('复制失败');
+                } catch (e) {}
+            });
+        }
+        
+        function closeForm() {
+            highlightedNets.forEach(function(net) {
+                try { eda.pcb_Net.unhighlightNet(net); } catch {}
+            });
+            highlightedNets = [];
+            try { eda.sys_IFrame.closeIFrame('timingForm'); } catch {}
+        }
+        
+        function exportWithFormat(format) {
+            if (!format) {
+                format = document.getElementById('exportFormat').value;
+            }
+            exportSVGWithFormat(format);
+        }
+        
+        function updateExportBtnText(format) {
+            var btn = document.getElementById('exportBtn');
+            if (btn) {
+                btn.textContent = '导出 ' + format.toUpperCase();
+            }
+        }
+        
+        function exportSVG() {
+            exportSVGWithFormat(document.getElementById('exportFormat').value);
+        }
+        
+        function exportSVGWithFormat(format) {
+            if (!computedData) {
+                alert('没有可导出的数据');
+                return;
+            }
+            var format = document.getElementById('exportFormat').value;
+            var svg = makeMultiSignalSVG(
+                componentData.des1, componentData.des2,
+                componentData.name1, componentData.name2,
+                computedData.signals, computedData.freq, computedData.period,
+                computedData.setup, computedData.hold, computedData.dist, true
+            );
+            
+            if (format === 'svg') {
+                var blob = new Blob([svg], { type: 'image/svg+xml' });
+                var fileName = 'timing_' + Date.now() + '.svg';
+                eda.sys_FileSystem.saveFile(blob, fileName).then(function() {
+                    log('SVG导出成功: ' + fileName);
+                    eda.sys_Message.showToastMessage('已导出: ' + fileName);
+                }).catch(function(err) {
+                    log('SVG导出失败: ' + err);
+                    alert('导出失败: ' + err);
+                });
+                return;
+            }
+            
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var img = new Image();
+            var svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+            var url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                var scale = 3;
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                ctx.scale(scale, scale);
+                ctx.fillStyle = document.body.classList.contains('theme-light') ? '#ffffff' : '#1e1e1e';
+                ctx.fillRect(0, 0, img.width, img.height);
+                ctx.drawImage(img, 0, 0);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                URL.revokeObjectURL(url);
+                
+                var mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
+                var dataUrl = canvas.toDataURL(mimeType, 0.9);
+                var base64 = dataUrl.split(',')[1];
+                var binary = atob(base64);
+                var array = new Uint8Array(binary.length);
+                for (var i = 0; i < binary.length; i++) {
+                    array[i] = binary.charCodeAt(i);
+                }
+                var blob = new Blob([array], { type: mimeType });
+                var fileName = 'timing_' + Date.now() + '.' + format;
+                eda.sys_FileSystem.saveFile(blob, fileName).then(function() {
+                    log(format.toUpperCase() + '导出成功: ' + fileName);
+                    eda.sys_Message.showToastMessage('已导出: ' + fileName);
+                }).catch(function(err) {
+                    log(format.toUpperCase() + '导出失败: ' + err);
+                    alert('导出失败: ' + err);
+                });
+            };
+            
+            img.onerror = function() {
+                URL.revokeObjectURL(url);
+                alert('图片加载失败');
+            };
+            
+            img.src = url;
+        }
+        
+        document.getElementById('freqInput').addEventListener('input', function() {
+            updatePeriod();
+            computeTimingData();
+        });
+        document.getElementById('setupInput').addEventListener('input', function() {
+            computeTimingData();
+        });
+        document.getElementById('holdInput').addEventListener('input', function() {
+            computeTimingData();
+        });
+        document.getElementById('boardThicknessInput').addEventListener('input', function() {
+            var match = String(this.value).match(/([\d.]+)/);
+            if (match) {
+                var mm = parseFloat(match[1]);
+                if (!isNaN(mm) && mm > 0) {
+                    boardThicknessMM = mm;
+                    boardThicknessMIL = mm * 39.37;
+                    this.dataset.mm = mm.toFixed(4);
+                }
+            }
+        });
+        document.getElementById('boardThicknessInput').addEventListener('blur', function() {
+            updateBoardThickness(boardThicknessMM);
+        });
+        document.getElementById('boardThicknessInput').addEventListener('focus', function() {
+            this.value = this.dataset.mm || '1.6000';
+        });
+        document.getElementById('calcBtn').addEventListener('click', function() {
+            autoUpdate = true;
+            calculate();
+        });
+        
+        document.getElementById('exportFormat').addEventListener('change', function() {
+            updateExportBtnText(this.value);
+        });
+        
+        window.onbeforeunload = function() {
+            highlightedNets.forEach(function(net) {
+                try { eda.pcb_Net.unhighlightNet(net); } catch {}
+            });
+            highlightedNets = [];
+        };
+        
+        log('页面加载');
+        initTheme();
+        
+        var themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+        
+        updateBoardThickness('1.6000');
+        
+        eda.sys_MessageBus.subscribePublic('timingFormData', function(data) {
+            log('收到推送数据');
+            if (data && data.info) initForm(data);
+        });
+        eda.sys_MessageBus.publishPublic('requestTimingFormData', null);
+        
+        setTimeout(function() { 
+            if (!componentData) { 
+                log('超时，再次请求'); 
+                eda.sys_MessageBus.publishPublic('requestTimingFormData', null);
+            } 
+        }, 3000);
+    </script>
+</body>
+</html>
